@@ -1,0 +1,43 @@
+services:
+
+  nn_ligands_ligand_only_backend:
+    image: 'descriptor-backend:latest'
+    environment:
+      POSTGRES_SERVER: descriptor_database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWD: "${POSTGRES_PASSWD:?is not set, expected from ../.env.secrets via the .env link in this folder}"
+      POSTGRES_DB: nn_ligands_ligand_only_data
+      API_PREFIX: nn-ligands-ligand-only
+    entrypoint: bash prestart.sh
+    networks:
+      - external_network
+      - descriptor-libraries-internal
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.descriptor_libraries-nn_ligands_ligand_only_backend.loadbalancer.server.port=8080
+      - "traefik.http.routers.descriptor_libraries-nn_ligands_ligand_only_backend.rule=(Host(`descriptor-libraries.molssi.org`) && PathPrefix(`/api/nn-ligands-ligand-only`))"
+      - traefik.http.routers.descriptor_libraries-nn_ligands_ligand_only_backend.entrypoints=websecure
+      - traefik.http.routers.descriptor_libraries-nn_ligands_ligand_only_backend.tls.certresolver=letsencrypt
+
+  nn_ligands_ligand_only_frontend:
+    image: 'descriptor-frontend-alpine:latest'
+    volumes:
+      - "./public:/app/public"
+    environment:
+      - VITE_BASE_URL=/nn-ligands-ligand-only
+    networks:
+      - external_network
+    entrypoint: ash renameBase.sh
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.descriptor_libraries-frontend-nn_ligands_ligand_only.rule=(Host(`descriptor-libraries.molssi.org`) && PathPrefix(`/nn-ligands-ligand-only`))"
+      - "traefik.http.services.descriptor_libraries-frontend-nn_ligands_ligand_only.loadbalancer.server.port=3000"
+      - traefik.http.routers.descriptor_libraries-frontend-nn_ligands_ligand_only.entrypoints=websecure
+      - traefik.http.routers.descriptor_libraries-frontend-nn_ligands_ligand_only.tls.certresolver=letsencrypt
+
+networks:
+  external_network:
+    name: docker_main_net
+    external: true
+  descriptor-libraries-internal:
+    external: true
