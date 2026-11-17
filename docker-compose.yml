@@ -1,7 +1,7 @@
 services:
 
   nn_ligands_ligand_only_backend:
-    image: 'descriptor-backend:latest'
+    image: "${BACKEND_IMAGE:?is not set; deploy with ../scripts/deploy-library.sh}"
     environment:
       POSTGRES_SERVER: descriptor_database
       POSTGRES_USER: postgres
@@ -20,7 +20,7 @@ services:
       - traefik.http.routers.descriptor_libraries-nn_ligands_ligand_only_backend.tls.certresolver=letsencrypt
 
   nn_ligands_ligand_only_frontend:
-    image: 'descriptor-frontend-alpine:latest'
+    image: "${FRONTEND_IMAGE:?is not set; deploy with ../scripts/deploy-library.sh}"
     volumes:
       - "./public:/app/public"
     environment:
